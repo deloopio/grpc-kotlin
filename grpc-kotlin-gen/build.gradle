@@ -1,0 +1,17 @@
+plugins {
+  id 'org.springframework.boot' version '2.0.2.RELEASE'
+}
+
+apply plugin: 'kotlin'
+
+dependencies {
+    compile 'com.salesforce.servicelibs:jprotoc:0.9.1'
+}
+
+// executable jar
+bootJar {
+  mainClassName = 'io.rouz.grpc.kotlin.GrpcKotlinGenerator'
+  classifier = 'boot'
+
+  launchScript()
+}

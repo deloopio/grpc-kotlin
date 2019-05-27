@@ -26,7 +26,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "grpc-kotlin-gen/pom.xml" }}-{{ checksum "grpc-kotlin-test/pom.xml" }}
+          - v1-dependencies-{{ checksum "build.gradle" }}-{{ checksum "grpc-kotlin-gen/build.gradle" }}-{{ checksum "grpc-kotlin-test/build.gradle" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
@@ -36,4 +36,4 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "grpc-kotlin-gen/pom.xml" }}-{{ checksum "grpc-kotlin-test/pom.xml" }}
+          key: v1-dependencies-{{ checksum "build.gradle" }}-{{ checksum "grpc-kotlin-gen/build.gradle" }}-{{ checksum "grpc-kotlin-test/build.gradle" }}

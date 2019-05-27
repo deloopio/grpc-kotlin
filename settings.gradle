@@ -1,0 +1,8 @@
+rootProject.name = 'grpc-kotlin-parent'
+include ':grpc-kotlin-gen'
+include ':grpc-kotlin-test'
+include ':grpc-kotlin-example-chatserver'
+
+project(':grpc-kotlin-gen').projectDir = "$rootDir/grpc-kotlin-gen" as File
+project(':grpc-kotlin-test').projectDir = "$rootDir/grpc-kotlin-test" as File
+project(':grpc-kotlin-example-chatserver').projectDir = "$rootDir/grpc-kotlin-example-chatserver" as File

@@ -1,9 +1,10 @@
 # Build products and artifacts
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
+
+.gradle
+*.iml
+build/
+grpc-kotlin-gen/build/
+grpc-kotlin-test/build/
 release.properties
 
 # Stuff from various IDE's and editors

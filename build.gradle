@@ -1,0 +1,24 @@
+allprojects {
+  group = 'io.rouz'
+  version = '0.1.1'
+}
+
+subprojects {
+  buildscript {
+    ext.version_kotlin = '1.3.31'
+
+    repositories {
+      mavenCentral()
+      jcenter()
+    }
+
+    dependencies {
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${version_kotlin}"
+    }
+  }
+
+  repositories {
+    mavenCentral()
+    jcenter()
+  }
+}
