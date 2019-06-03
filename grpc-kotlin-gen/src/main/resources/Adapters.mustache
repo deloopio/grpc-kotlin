@@ -83,13 +83,13 @@ class StreamObserverChannel<E>(
     }
 }
 
-class ContextCoroutineContextElement : ThreadContextElement<Context> {
+class GrpcContextCoroutineContextElement : ThreadContextElement<Context> {
 
-    companion object Key : CoroutineContext.Key<ContextCoroutineContextElement>
+    companion object Key : CoroutineContext.Key<GrpcContextCoroutineContextElement>
 
     private val grpcContext: Context = Context.current()
 
-    override val key: CoroutineContext.Key<ContextCoroutineContextElement>
+    override val key: CoroutineContext.Key<GrpcContextCoroutineContextElement>
         get() = Key
 
     override fun updateThreadContext(context: CoroutineContext): Context =

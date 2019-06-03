@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 {{#packageName}}
 package {{packageName}}
 {{/packageName}}
@@ -24,7 +26,7 @@ abstract class {{serviceName}}ImplBase(
 
     private val coroutineScope = object : CoroutineScope {
       override val coroutineContext: CoroutineContext
-        get() = ContextCoroutineContextElement() + context
+         get() = context
     }
 
     {{#methods}}
@@ -41,7 +43,7 @@ abstract class {{serviceName}}ImplBase(
         request: {{inputType}},
         responseObserver: StreamObserver<{{outputType}}>
     ) {
-        coroutineScope.launch {
+        coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             tryCatchingStatus(responseObserver) {
                 val response = {{methodName}}(request)
                 onNext(response)
@@ -59,7 +61,7 @@ abstract class {{serviceName}}ImplBase(
         request: {{inputType}},
         responseObserver: StreamObserver<{{outputType}}>
     ) {
-        coroutineScope.launch {
+        coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             tryCatchingStatus(responseObserver) {
                 val responses = {{methodName}}(request)
                 for (response in responses) {
@@ -81,7 +83,7 @@ abstract class {{serviceName}}ImplBase(
         responseObserver: StreamObserver<{{outputType}}>
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
-        coroutineScope.launch {
+        coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             tryCatchingStatus(responseObserver) {
                 val response = {{methodName}}(requests)
                 onNext(response)
@@ -100,7 +102,7 @@ abstract class {{serviceName}}ImplBase(
         responseObserver: StreamObserver<{{outputType}}>
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
-        coroutineScope.launch {
+        coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             tryCatchingStatus(responseObserver) {
                 val responses = {{methodName}}(requests)
                 for (response in responses) {
@@ -203,4 +205,11 @@ abstract class {{serviceName}}ImplBase(
             }
         }
     }
+
+    // use when responding with a stream
+    protected fun <E> produce(
+       context: CoroutineContext = EmptyCoroutineContext,
+       capacity: Int = 0,
+       block: suspend ProducerScope<E>.() -> Unit
+    ): ReceiveChannel<E> = coroutineScope.produce(context + GrpcContextCoroutineContextElement(), capacity, block)
 }
