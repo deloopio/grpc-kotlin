@@ -4,6 +4,7 @@ package {{packageName}}
 
 import io.rouz.grpc.*
 import {{packageName}}.{{serviceName}}Grpc.{{serviceName}}Stub
+import {{packageName}}.{{serviceName}}Grpc.{{serviceName}}BlockingStub
 
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.coroutines.suspendCoroutine
@@ -26,6 +27,13 @@ inline suspend fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}): {
         {{methodName}}(request, ContinuationStreamObserver(it))
     }
 }
+inline suspend fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}.Builder.() -> Unit): {{outputType}} {
+    return {{methodName}}({{inputType}}.newBuilder().apply(request).build())
+}
+inline fun {{serviceName}}BlockingStub.{{methodName}}(request: {{inputType}}.Builder.() -> Unit): {{outputType}} {
+    return {{methodName}}({{inputType}}.newBuilder().apply(request).build())
+}
+
 {{/isManyOutput}}
 {{#isManyOutput}}
 {{! == unary req, streaming resp == }}
@@ -34,6 +42,10 @@ fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}): ReceiveChannel<{
     {{methodName}}(request, responseChannel)
     return responseChannel
 }
+fun {{serviceName}}Stub.{{methodName}}(request: {{inputType}}.Builder.() -> Unit): ReceiveChannel<{{outputType}}> {
+    return {{methodName}}({{inputType}}.newBuilder().apply(request).build())
+}
+
 {{/isManyOutput}}
 {{/isManyInput}}
 {{#isManyInput}}
