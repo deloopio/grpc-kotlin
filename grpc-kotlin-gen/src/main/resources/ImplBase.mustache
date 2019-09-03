@@ -44,6 +44,7 @@ abstract class {{serviceName}}ImplBase(
         responseObserver: StreamObserver<{{outputType}}>
     ) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
+            this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
                 val response = {{methodName}}(request)
                 onNext(response)
@@ -53,7 +54,7 @@ abstract class {{serviceName}}ImplBase(
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == unary req, streaming resp == }}
-    open fun {{methodName}}(request: {{inputType}}): ReceiveChannel<{{outputType}}> {
+    open fun {{methodName}}(request: {{inputType}}, produceScope: ProducerScope<{{outputType}}>) {
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
 
@@ -62,11 +63,10 @@ abstract class {{serviceName}}ImplBase(
         responseObserver: StreamObserver<{{outputType}}>
     ) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
+            this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
-                val responses = {{methodName}}(request)
-                for (response in responses) {
-                  onNext(response)
-                }
+                produce<{{outputType}}> { {{methodName}}(request, this) }
+                  .consumeEach(::onNext)
             }
         }
     }
@@ -84,6 +84,7 @@ abstract class {{serviceName}}ImplBase(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
+            this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
                 val response = {{methodName}}(requests)
                 onNext(response)
@@ -103,6 +104,7 @@ abstract class {{serviceName}}ImplBase(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
+            this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
                 val responses = {{methodName}}(requests)
                 for (response in responses) {
@@ -205,11 +207,11 @@ abstract class {{serviceName}}ImplBase(
             }
         }
     }
+}
 
-    // use when responding with a stream
-    protected fun <E> produce(
-       context: CoroutineContext = EmptyCoroutineContext,
-       capacity: Int = 0,
-       block: suspend ProducerScope<E>.() -> Unit
-    ): ReceiveChannel<E> = coroutineScope.produce(context + GrpcContextCoroutineContextElement(), capacity, block)
+private fun CoroutineScope.doCancelScopeWhenGrpcContextCancelled() {
+  val onGrpcContextCancelled: (Context) -> Unit = {
+    cancel(CancellationException("Grpc context cancelled"))
+  }
+  Context.current().addListener(onGrpcContextCancelled, Runnable::run)
 }
