@@ -22,7 +22,7 @@ import kotlinx.coroutines.channels.*
 )
 abstract class {{serviceName}}ImplBase(
     context: CoroutineContext = Dispatchers.Default
-) : BindableService {
+) : {{serviceName}}Grpc.{{serviceName}}ImplBase() {
 
     private val coroutineScope = object : CoroutineScope {
       override val coroutineContext: CoroutineContext
@@ -39,10 +39,7 @@ abstract class {{serviceName}}ImplBase(
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
 
-    internal fun {{methodName}}Internal(
-        request: {{inputType}},
-        responseObserver: StreamObserver<{{outputType}}>
-    ) {
+    final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
@@ -51,6 +48,7 @@ abstract class {{serviceName}}ImplBase(
             }
         }
     }
+
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == unary req, streaming resp == }}
@@ -58,10 +56,7 @@ abstract class {{serviceName}}ImplBase(
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
 
-    internal fun {{methodName}}Internal(
-        request: {{inputType}},
-        responseObserver: StreamObserver<{{outputType}}>
-    ) {
+    final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
@@ -118,19 +113,6 @@ abstract class {{serviceName}}ImplBase(
     {{/isManyInput}}
     {{/methods}}
 
-    override fun bindService(): ServerServiceDefinition {
-        return ServerServiceDefinition.builder(getServiceDescriptor())
-            {{#methods}}
-            .addMethod(
-                get{{methodNamePascalCase}}Method(),
-                ServerCalls.{{grpcCallsMethodName}}(
-                    MethodHandlers(METHODID_{{methodNameUpperUnderscore}})
-                )
-            )
-            {{/methods}}
-            .build()
-    }
-
     private fun unimplemented(methodDescriptor: MethodDescriptor<*, *>): Status {
         return Status.UNIMPLEMENTED
             .withDescription("Method ${methodDescriptor.fullMethodName} is unimplemented")
@@ -162,49 +144,6 @@ abstract class {{serviceName}}ImplBase(
             responseObserver.onCompleted()
         } catch (t: Throwable) {
             handleException(t, responseObserver)
-        }
-    }
-
-    {{#methods}}
-    private val METHODID_{{methodNameUpperUnderscore}} = {{methodNumber}}
-    {{/methods}}
-
-    private inner class MethodHandlers<Req, Resp> internal constructor(
-        private val methodId: Int
-    ) : ServerCalls.UnaryMethod<Req, Resp>,
-        ServerCalls.ServerStreamingMethod<Req, Resp>,
-        ServerCalls.ClientStreamingMethod<Req, Resp>,
-        ServerCalls.BidiStreamingMethod<Req, Resp> {
-
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(request: Req, responseObserver: StreamObserver<Resp>) {
-            when (methodId) {
-                {{#methods}}
-                {{^isManyInput}}
-                METHODID_{{methodNameUpperUnderscore}} ->
-                    this@{{serviceName}}ImplBase.{{methodName}}Internal(
-                        request as {{inputType}},
-                        responseObserver as StreamObserver<{{outputType}}>
-                    )
-                {{/isManyInput}}
-                {{/methods}}
-                else -> throw AssertionError()
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(responseObserver: StreamObserver<Resp>): StreamObserver<Req> {
-            when (methodId) {
-                {{#methods}}
-                {{#isManyInput}}
-                METHODID_{{methodNameUpperUnderscore}} ->
-                    return this@{{serviceName}}ImplBase.{{methodName}}Internal(
-                        responseObserver as StreamObserver<{{outputType}}>
-                    ) as StreamObserver<Req>
-                {{/isManyInput}}
-                {{/methods}}
-                else -> throw AssertionError()
-            }
         }
     }
 }
