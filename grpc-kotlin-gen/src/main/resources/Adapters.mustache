@@ -2,9 +2,17 @@ package io.rouz.grpc
 
 import io.grpc.Context
 import io.grpc.stub.StreamObserver
+import io.grpc.Metadata
+import io.grpc.Contexts
+import io.grpc.ServerCall
+import io.grpc.ServerCall.Listener
+import io.grpc.ServerCallHandler
+import io.grpc.ServerInterceptor
+import java.lang.IllegalStateException
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import javax.inject.Inject
 import javax.inject.Qualifier
 import javax.inject.Scope
 
@@ -108,3 +116,30 @@ annotation class CallScope
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ForServices{ }
+
+data class RequestData(val metadata : Metadata)
+
+class GrpcKeepRequestDataInterceptor @Inject constructor() : ServerInterceptor {
+
+  override fun <ReqT, RespT> interceptCall(
+    call: ServerCall<ReqT, RespT>,
+    headers: Metadata,
+    next: ServerCallHandler<ReqT, RespT>
+  ): Listener<ReqT> {
+    val ctx = Context.current()
+      .withValue(requestDataKey, RequestData(headers))
+    return Contexts.interceptCall(ctx, call, headers, next)
+  }
+
+  companion object {
+    private val requestDataKey = Context.key<RequestData>("grpcKotlinRequestData")
+
+    fun getKeptRequestData(): RequestData {
+      try {
+        return requestDataKey.get()
+      } catch (e: Throwable) {
+        throw IllegalStateException("No request data found. Have you added GrpcKeepRequestDataInterceptor to your interceptors?", e)
+      }
+    }
+  }
+}

@@ -4,8 +4,6 @@
 package {{packageName}}
 {{/packageName}}
 
-import {{packageName}}.{{serviceName}}Grpc.*
-
 import io.grpc.*
 import io.grpc.stub.*
 import io.rouz.grpc.*
@@ -13,7 +11,8 @@ import io.rouz.grpc.*
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import javax.inject.Provider
+import dagger.Subcomponent
+import dagger.BindsInstance
 
 {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
@@ -23,9 +22,9 @@ import javax.inject.Provider
 )
 class {{serviceName}}ProxyImpl(
     @io.rouz.grpc.ForServices context: CoroutineContext
-<!--    {{#methods}}-->
-<!--    , private val handle{{methodNamePascalCase}} : Provider<Handle{{methodNamePascalCase}}>-->
-<!--    {{/methods}}-->
+   {{#methods}}
+    , private val {{methodName}}ComponentFactory : {{methodNamePascalCase}}Subcomponent.Factory
+    {{/methods}}
 ) : {{serviceName}}Grpc.{{serviceName}}ImplBase() {
 
     private val coroutineScope = object : CoroutineScope {
@@ -34,20 +33,35 @@ class {{serviceName}}ProxyImpl(
     }
 
     {{#methods}}
+
+    @CallScope
+    @Subcomponent
+    interface {{methodNamePascalCase}}Subcomponent {
+      @Subcomponent.Factory
+      interface Factory {
+        fun create(@BindsInstance requestData : RequestData) : {{methodNamePascalCase}}Subcomponent
+      }
+
+      fun provideImplementation() : {{methodNamePascalCase}}Implementation
+    }
+
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
     {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
     {{^isManyInput}}
     {{^isManyOutput}}
     {{! == unary req, unary resp == }}
-    interface Handle{{methodNamePascalCase}} {
+    interface {{methodNamePascalCase}}Implementation {
         suspend operator fun invoke(request: {{inputType}}): {{outputType}}
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
+        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
-                val response = {{methodName}}(request)
+                val implementation = {{methodName}}ComponentFactory.create(requestData)
+                                .provideImplementation()
+                val response = implementation(request)
                 onNext(response)
             }
         }
@@ -61,10 +75,13 @@ class {{serviceName}}ProxyImpl(
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
+        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
-                produce<{{outputType}}> { {{methodName}}(request, this) }
+                val implementation = {{methodName}}ComponentFactory.create(requestData)
+                                 .provideImplementation()
+                produce<{{outputType}}> { implementation(request, this) }
                   .consumeEach(::onNext)
             }
         }
