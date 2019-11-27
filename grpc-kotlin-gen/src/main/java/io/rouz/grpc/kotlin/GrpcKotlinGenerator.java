@@ -163,10 +163,10 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   private String getServiceHandlersModuleFullName(CodeGeneratorRequest request) {
-    if (!request.getParameter().contains(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME)) {
-      throw new IllegalArgumentException(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME + " option not specified");
+    if (request.getParameter().contains(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME)) {
+      return request.getParameter().split("=")[1].trim();
     }
-    return request.getParameter().split("=")[1].trim();
+    return "";
   }
 
   private String lowerCaseFirst(String s) {

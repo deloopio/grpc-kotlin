@@ -35,7 +35,9 @@ class {{serviceName}} @Inject constructor(
 
     {{#methods}}
     @CallScope
+    {{#serviceHandlersModuleFullName}}
     @Subcomponent(modules = [{{serviceHandlersModuleFullName}}::class])
+    {{/serviceHandlersModuleFullName}}
     interface {{methodNamePascalCase}}Subcomponent {
       @Subcomponent.Factory
       interface Factory {
