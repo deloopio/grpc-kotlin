@@ -20,7 +20,7 @@ import dagger.BindsInstance
     value = ["by gRPC Kotlin generator"],
     comments = "Source: {{protoName}}"
 )
-class {{serviceName}}ProxyImpl(
+class {{serviceName}}Proxy(
     @io.rouz.grpc.ForServices context: CoroutineContext
    {{#methods}}
     , private val {{methodName}}ComponentFactory : {{methodNamePascalCase}}Subcomponent.Factory
@@ -42,7 +42,7 @@ class {{serviceName}}ProxyImpl(
         fun create(@BindsInstance requestData : RequestData) : {{methodNamePascalCase}}Subcomponent
       }
 
-      fun provideImplementation() : {{methodNamePascalCase}}Implementation
+      fun provideHandleImplementation() : Handle{{methodNamePascalCase}}Impl
     }
 
     {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
@@ -50,7 +50,7 @@ class {{serviceName}}ProxyImpl(
     {{^isManyInput}}
     {{^isManyOutput}}
     {{! == unary req, unary resp == }}
-    interface {{methodNamePascalCase}}Implementation {
+    interface Handle{{methodNamePascalCase}}Impl {
         suspend operator fun invoke(request: {{inputType}}): {{outputType}}
     }
 
@@ -60,7 +60,7 @@ class {{serviceName}}ProxyImpl(
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
                 val implementation = {{methodName}}ComponentFactory.create(requestData)
-                                .provideImplementation()
+                                .provideHandleImplementation()
                 val response = implementation(request)
                 onNext(response)
             }
@@ -70,7 +70,7 @@ class {{serviceName}}ProxyImpl(
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == unary req, streaming resp == }}
-    interface Handle{{methodNamePascalCase}} {
+    interface Handle{{methodNamePascalCase}}Impl {
        suspend operator fun invoke(request: {{inputType}}, produceScope: ProducerScope<{{outputType}}>)
     }
 
@@ -80,7 +80,7 @@ class {{serviceName}}ProxyImpl(
             this.doCancelScopeWhenGrpcContextCancelled()
             tryCatchingStatus(responseObserver) {
                 val implementation = {{methodName}}ComponentFactory.create(requestData)
-                                 .provideImplementation()
+                                 .provideHandleImplementation()
                 produce<{{outputType}}> { implementation(request, this) }
                   .consumeEach(::onNext)
             }
