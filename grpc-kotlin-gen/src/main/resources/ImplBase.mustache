@@ -13,6 +13,7 @@ import io.rouz.grpc.*
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import javax.inject.Provider
 
 {{#javaDoc}}{{{javaDoc}}}{{/javaDoc}}
 {{#deprecated}}@Deprecated("deprecated"){{/deprecated}}
@@ -20,8 +21,11 @@ import kotlinx.coroutines.channels.*
     value = ["by gRPC Kotlin generator"],
     comments = "Source: {{protoName}}"
 )
-abstract class {{serviceName}}ImplBase(
-    context: CoroutineContext = Dispatchers.Default
+class {{serviceName}}ProxyImpl(
+    @io.rouz.grpc.ForServices context: CoroutineContext
+<!--    {{#methods}}-->
+<!--    , private val handle{{methodNamePascalCase}} : Provider<Handle{{methodNamePascalCase}}>-->
+<!--    {{/methods}}-->
 ) : {{serviceName}}Grpc.{{serviceName}}ImplBase() {
 
     private val coroutineScope = object : CoroutineScope {
@@ -35,8 +39,8 @@ abstract class {{serviceName}}ImplBase(
     {{^isManyInput}}
     {{^isManyOutput}}
     {{! == unary req, unary resp == }}
-    open suspend fun {{methodName}}(request: {{inputType}}): {{outputType}} {
-        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    interface Handle{{methodNamePascalCase}} {
+        suspend operator fun invoke(request: {{inputType}}): {{outputType}}
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
@@ -52,8 +56,8 @@ abstract class {{serviceName}}ImplBase(
     {{/isManyOutput}}
     {{#isManyOutput}}
     {{! == unary req, streaming resp == }}
-    open fun {{methodName}}(request: {{inputType}}, produceScope: ProducerScope<{{outputType}}>) {
-        throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
+    interface Handle{{methodNamePascalCase}} {
+       suspend operator fun invoke(request: {{inputType}}, produceScope: ProducerScope<{{outputType}}>)
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
@@ -65,11 +69,12 @@ abstract class {{serviceName}}ImplBase(
             }
         }
     }
+
     {{/isManyOutput}}
     {{/isManyInput}}
     {{#isManyInput}}
     {{^isManyOutput}}
-    {{! == streaming req, unary resp == }}
+    {{! == TODO streaming req, unary resp == }}
     open suspend fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): {{outputType}} {
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }
@@ -89,7 +94,7 @@ abstract class {{serviceName}}ImplBase(
     }
     {{/isManyOutput}}
     {{#isManyOutput}}
-    {{! == streaming req, streaming resp == }}
+    {{! == TODO streaming req, streaming resp == }}
     open fun {{methodName}}(requests: ReceiveChannel<{{inputType}}>): ReceiveChannel<{{outputType}}> {
         throw unimplemented(get{{methodNamePascalCase}}Method()).asRuntimeException()
     }

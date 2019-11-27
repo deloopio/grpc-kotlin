@@ -5,6 +5,8 @@ import io.grpc.stub.StreamObserver
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import javax.inject.Qualifier
+import javax.inject.Scope
 
 class ManyToOneCall<in TRequest, out TResponse>(
     private val request: StreamObserver<TRequest>,
@@ -98,3 +100,11 @@ class GrpcContextCoroutineContextElement : ThreadContextElement<Context> {
     override fun restoreThreadContext(context: CoroutineContext, oldState: Context) =
         grpcContext.detach(oldState)
 }
+
+@Scope
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CallScope
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ForServices{ }
