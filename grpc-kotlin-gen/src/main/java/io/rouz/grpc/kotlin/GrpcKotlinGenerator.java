@@ -168,8 +168,10 @@ public class GrpcKotlinGenerator extends Generator {
 
     files.add(buildUtilFile());
     for (Context service : services) {
-      files.add(buildServiceBaseImpl(service));
-      files.add(buildStubExtensions(service));
+      if (!service.packageName.startsWith("io.grpc.reflection")) {
+        files.add(buildServiceBaseImpl(service));
+        files.add(buildStubExtensions(service));
+      }
     }
 
     return files;
