@@ -56,6 +56,7 @@ public class GrpcKotlinGenerator extends Generator {
   private static final String ADAPTERS_FILE_PATH = "io/rouz/grpc/Adapters.kt";
   private static final String SERVICE_JAVA_DOC_PREFIX = "    ";
   private static final String METHOD_JAVA_DOC_PREFIX = "        ";
+  private static final String OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME = "handlers_module_class_full_name";
 
   public static void main(String[] args) {
     ProtocPlugin.generate(new GrpcKotlinGenerator());
@@ -70,11 +71,12 @@ public class GrpcKotlinGenerator extends Generator {
       .filter(protoFile -> request.getFileToGenerateList().contains(protoFile.getName()))
       .collect(Collectors.toList());
 
-    List<Context> services = findServices(protosToGenerate, typeMap);
+    String serviceHandlersModuleFullName = getServiceHandlersModuleFullName(request);
+    List<Context> services = findServices(protosToGenerate, typeMap, serviceHandlersModuleFullName);
     return generateFiles(services);
   }
 
-  private List<Context> findServices(List<FileDescriptorProto> protos, ProtoTypeMap typeMap) {
+  private List<Context> findServices(List<FileDescriptorProto> protos, ProtoTypeMap typeMap, String serviceHandlersModuleFullName) {
     List<Context> contexts = new ArrayList<>();
 
     protos.forEach(fileProto -> {
@@ -89,6 +91,7 @@ public class GrpcKotlinGenerator extends Generator {
           context.javaDoc = getJavaDoc(getComments(location), SERVICE_JAVA_DOC_PREFIX);
           context.protoName = fileProto.getName();
           context.packageName = extractPackageName(fileProto);
+          context.serviceHandlersModuleFullName = serviceHandlersModuleFullName;
           contexts.add(context);
         });
     });
@@ -157,6 +160,13 @@ public class GrpcKotlinGenerator extends Generator {
       methodContext.grpcCallsMethodName = "asyncBidiStreamingCall";
     }
     return methodContext;
+  }
+
+  private String getServiceHandlersModuleFullName(CodeGeneratorRequest request) {
+    if (!request.getParameter().contains(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME)) {
+      throw new IllegalArgumentException(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME + " option not specified");
+    }
+    return request.getParameter().split("=")[1].trim();
   }
 
   private String lowerCaseFirst(String s) {
@@ -251,6 +261,7 @@ public class GrpcKotlinGenerator extends Generator {
     public String serviceName;
     public boolean deprecated;
     public String javaDoc;
+    public String serviceHandlersModuleFullName;
     public List<MethodContext> methods = new ArrayList<>();
   }
 
