@@ -21,7 +21,7 @@ import javax.inject.Inject
     value = ["by gRPC Kotlin generator"],
     comments = "Source: {{protoName}}"
 )
-class {{serviceName}}Proxy @Inject constructor(
+class {{serviceName}} @Inject constructor(
     @io.rouz.grpc.ForServices context: CoroutineContext
    {{#methods}}
     , private val {{methodName}}ComponentFactory : {{methodNamePascalCase}}Subcomponent.Factory
@@ -34,7 +34,6 @@ class {{serviceName}}Proxy @Inject constructor(
     }
 
     {{#methods}}
-
     @CallScope
     @Subcomponent
     interface {{methodNamePascalCase}}Subcomponent {
@@ -42,7 +41,6 @@ class {{serviceName}}Proxy @Inject constructor(
       interface Factory {
         fun create(@BindsInstance requestData : RequestData) : {{methodNamePascalCase}}Subcomponent
       }
-
       fun provideHandler() : {{methodNamePascalCase}}Handler
     }
 
