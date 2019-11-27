@@ -187,7 +187,7 @@ public class GrpcKotlinGenerator extends Generator {
   }
 
   private PluginProtos.CodeGeneratorResponse.File buildServiceBaseImpl(Context context) {
-    String content = applyTemplate("ProxyImpl.mustache", context);
+    String content = applyTemplate("Proxy.mustache", context);
     String fileName = context.serviceName + "Proxy.kt";
     return PluginProtos.CodeGeneratorResponse.File
       .newBuilder()
