@@ -141,23 +141,10 @@ class {{serviceName}} @Inject constructor(
             .withDescription("Method ${methodDescriptor.fullMethodName} is unimplemented")
     }
 
-    private fun <E> handleException(t: Throwable?, responseObserver: StreamObserver<E>) {
+    private fun <E> handleException(t: Throwable, responseObserver: StreamObserver<E>) {
         when (t) {
-            null -> return
-            is CancellationException -> handleException(t.cause, responseObserver)
-            is StatusException, is StatusRuntimeException -> responseObserver.onError(t)
-            is RuntimeException -> {
-                responseObserver.onError(Status.UNKNOWN.asRuntimeException())
-                throw t
-            }
-            is Exception -> {
-                responseObserver.onError(Status.UNKNOWN.asException())
-                throw t
-            }
-            else -> {
-                responseObserver.onError(Status.INTERNAL.asException())
-                throw t
-            }
+          is CancellationException -> responseObserver.onError(t.cause ?: RuntimeException("Cancellation without cause"))
+          else -> responseObserver.onError(t)
         }
     }
 
