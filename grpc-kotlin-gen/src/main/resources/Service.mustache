@@ -56,14 +56,17 @@ class {{serviceName}} @Inject constructor(
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
-        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            this.doCancelScopeWhenGrpcContextCancelled()
-            tryCatchingStatus(responseObserver) {
-                val handler = {{methodName}}ComponentFactory.create(requestData)
-                                .provideHandler()
-                val response = handler.invoke(request)
-                onNext(response)
+            try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
+               val requestData = KeepRequestDataInContextInterceptor.getRequestData()
+               val handler = {{methodName}}ComponentFactory.create(requestData)
+                      .provideHandler()
+               val response = handler.invoke(request)
+               responseObserver.onNext(response)
+               responseObserver.onCompleted()
+            } catch (t: Throwable) {
+               responseObserver.onError(t)
             }
         }
     }
@@ -76,14 +79,17 @@ class {{serviceName}} @Inject constructor(
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
-        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            this.doCancelScopeWhenGrpcContextCancelled()
-            tryCatchingStatus(responseObserver) {
-                val handler = {{methodName}}ComponentFactory.create(requestData)
+            try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
+               val requestData = KeepRequestDataInContextInterceptor.getRequestData()
+               val handler = {{methodName}}ComponentFactory.create(requestData)
                                  .provideHandler()
-                produce<{{outputType}}> { handler.invoke(request, this) }
-                  .consumeEach(::onNext)
+               produce<{{outputType}}> { handler.invoke(request, this) }
+                  .consumeEach(responseObserver::onNext)
+               responseObserver.onCompleted()
+            } catch (t: Throwable) {
+               responseObserver.onError(t)
             }
         }
     }
@@ -102,10 +108,13 @@ class {{serviceName}} @Inject constructor(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            this.doCancelScopeWhenGrpcContextCancelled()
-            tryCatchingStatus(responseObserver) {
-                val response = {{methodName}}(requests)
-                onNext(response)
+            try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
+               val response = {{methodName}}(requests)
+               responseObserver.onNext(response)
+               responseObserver.onCompleted()
+            } catch (t: Throwable) {
+               responseObserver.onError(t)
             }
         }
         return requests
@@ -122,12 +131,15 @@ class {{serviceName}} @Inject constructor(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            this.doCancelScopeWhenGrpcContextCancelled()
-            tryCatchingStatus(responseObserver) {
-                val responses = {{methodName}}(requests)
-                for (response in responses) {
-                    onNext(response)
-                }
+            try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
+               val responses = {{methodName}}(requests)
+               for (response in responses) {
+                   onNext(response)
+               }
+               responseObserver.onCompleted()
+            } catch (t: Throwable) {
+               responseObserver.onError(t)
             }
         }
         return requests
@@ -140,27 +152,9 @@ class {{serviceName}} @Inject constructor(
         return Status.UNIMPLEMENTED
             .withDescription("Method ${methodDescriptor.fullMethodName} is unimplemented")
     }
-
-    private fun <E> handleException(t: Throwable, responseObserver: StreamObserver<E>) {
-        when (t) {
-          is CancellationException -> responseObserver.onError(t.cause ?: RuntimeException("Cancellation without cause"))
-          else -> responseObserver.onError(t)
-        }
-    }
-
-    private suspend fun <E> tryCatchingStatus(responseObserver: StreamObserver<E>, body: suspend StreamObserver<E>.() -> Unit) {
-        try {
-            responseObserver.body()
-            responseObserver.onCompleted()
-        } catch (t: Throwable) {
-            handleException(t, responseObserver)
-        }
-    }
 }
 
-private fun CoroutineScope.doCancelScopeWhenGrpcContextCancelled() {
-  val onGrpcContextCancelled: (Context) -> Unit = {
-    cancel(CancellationException("Grpc context cancelled"))
-  }
-  Context.current().addListener(onGrpcContextCancelled, Runnable::run)
-}
+private fun cancelCoroutineScopeOnGrpcCancellation(scope: CoroutineScope) =
+  Context.current().addListener({
+    scope.cancel(CancellationException(null, GrpcContextWasCancelled()))
+  }, Runnable::run)

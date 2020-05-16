@@ -200,7 +200,7 @@ public class GrpcKotlinGenerator extends Generator {
 
   private PluginProtos.CodeGeneratorResponse.File buildServiceBaseImpl(Context context) {
     String content = applyTemplate("Service.mustache", context);
-    String fileName = context.serviceName + "Service.kt";
+    String fileName = context.serviceName + ".kt";
     return PluginProtos.CodeGeneratorResponse.File
       .newBuilder()
       .setName(absoluteFileName(context.packageName, fileName))
