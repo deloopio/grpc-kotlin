@@ -57,8 +57,8 @@ class {{serviceName}} @Inject constructor(
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
                val requestData = KeepRequestDataInContextInterceptor.getRequestData()
                val handler = {{methodName}}ComponentFactory.create(requestData)
                       .provideHandler()
@@ -80,8 +80,8 @@ class {{serviceName}} @Inject constructor(
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
                val requestData = KeepRequestDataInContextInterceptor.getRequestData()
                val handler = {{methodName}}ComponentFactory.create(requestData)
                                  .provideHandler()
@@ -108,8 +108,8 @@ class {{serviceName}} @Inject constructor(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
                val response = {{methodName}}(requests)
                responseObserver.onNext(response)
                responseObserver.onCompleted()
@@ -131,8 +131,8 @@ class {{serviceName}} @Inject constructor(
     ): StreamObserver<{{inputType}}> {
         val requests = StreamObserverChannel<{{inputType}}>()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
-            cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               cancelCoroutineScopeOnGrpcCancellation(scope = this)
                val responses = {{methodName}}(requests)
                for (response in responses) {
                    onNext(response)
@@ -155,4 +155,6 @@ class {{serviceName}} @Inject constructor(
 }
 
 private fun cancelCoroutineScopeOnGrpcCancellation(scope: CoroutineScope) =
-  Context.current().addListener({ scope.cancel(CancellationException("Grpc context cancelled")) }, Runnable::run)
+  Context.current().addListener({
+    scope.cancel(CancellationException(null, GrpcContextWasCancelled()))
+  }, Runnable::run)

@@ -109,6 +109,8 @@ class GrpcContextCoroutineContextElement : ThreadContextElement<Context> {
         grpcContext.detach(oldState)
 }
 
+class GrpcContextWasCancelled : Throwable()
+
 @Scope
 @Retention(AnnotationRetention.RUNTIME)
 annotation class CallScope
