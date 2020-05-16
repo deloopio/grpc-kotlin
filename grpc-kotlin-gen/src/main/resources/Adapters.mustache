@@ -117,9 +117,9 @@ annotation class CallScope
 @Retention(AnnotationRetention.BINARY)
 annotation class ForServices{ }
 
-data class RequestData(val metadata : Metadata)
+data class RequestData(val headers : Metadata)
 
-class GrpcKeepRequestDataInterceptor @Inject constructor() : ServerInterceptor {
+class KeepRequestDataInContextInterceptor @Inject constructor() : ServerInterceptor {
 
   override fun <ReqT, RespT> interceptCall(
     call: ServerCall<ReqT, RespT>,
@@ -134,11 +134,11 @@ class GrpcKeepRequestDataInterceptor @Inject constructor() : ServerInterceptor {
   companion object {
     private val requestDataKey = Context.key<RequestData>("grpcKotlinRequestData")
 
-    fun getKeptRequestData(): RequestData {
+    fun getRequestData(): RequestData {
       try {
         return requestDataKey.get()
       } catch (e: Throwable) {
-        throw IllegalStateException("No request data found. Have you added GrpcKeepRequestDataInterceptor to your interceptors?", e)
+        throw IllegalStateException("No request data found. Have you added KeepRequestDataInContextInterceptor to your interceptors?", e)
       }
     }
   }

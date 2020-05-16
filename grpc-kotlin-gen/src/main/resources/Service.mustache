@@ -56,10 +56,10 @@ class {{serviceName}} @Inject constructor(
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
-        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               val requestData = KeepRequestDataInContextInterceptor.getRequestData()
                val handler = {{methodName}}ComponentFactory.create(requestData)
                       .provideHandler()
                val response = handler.invoke(request)
@@ -79,10 +79,10 @@ class {{serviceName}} @Inject constructor(
     }
 
     final override fun {{methodName}}(request: {{inputType}}, responseObserver: StreamObserver<{{outputType}}>) {
-        val requestData = GrpcKeepRequestDataInterceptor.getKeptRequestData()
         coroutineScope.launch(GrpcContextCoroutineContextElement()) {
             cancelCoroutineScopeOnGrpcCancellation(scope = this)
             try {
+               val requestData = KeepRequestDataInContextInterceptor.getRequestData()
                val handler = {{methodName}}ComponentFactory.create(requestData)
                                  .provideHandler()
                produce<{{outputType}}> { handler.invoke(request, this) }
