@@ -164,7 +164,10 @@ public class GrpcKotlinGenerator extends Generator {
 
   private String getServiceHandlersModuleFullName(CodeGeneratorRequest request) {
     if (request.getParameter().contains(OPTION_SERVICE_HANDLERS_MODULE_FULL_NAME)) {
-      return request.getParameter().split("=")[1].trim();
+      String[] parts = request.getParameter().split("=");
+      if (parts.length > 1) {
+        return parts[1].trim();
+      }
     }
     return "";
   }
@@ -179,7 +182,9 @@ public class GrpcKotlinGenerator extends Generator {
     files.add(buildUtilFile());
     for (Context service : services) {
       if (!service.packageName.startsWith("io.grpc.reflection")) {
-        files.add(buildServiceBaseImpl(service));
+        if (!service.serviceHandlersModuleFullName.isEmpty()) {
+          files.add(buildServiceBaseImpl(service));
+        }
         files.add(buildStubExtensions(service));
       }
     }
